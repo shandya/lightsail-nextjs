@@ -23,8 +23,8 @@ jobs:
       - name: Create .env on server
         run: |
           ssh -t -t ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
-            echo "DATABASE_URI=${{ secrets.DATABASE_URI }}" > /opt/bitnami/lightsail-nextjs/.env
-            echo "NODE_ENV=production" >> /opt/bitnami/lightsail-nextjs/.env
+            echo "DATABASE_URI=${{ secrets.DATABASE_URI }}" > /home/bitnami/lightsail-nextjs/.env
+            echo "NODE_ENV=production" >> /home/bitnami/lightsail-nextjs/.env
           EOF
 
       - name: Deploy to Lightsail
