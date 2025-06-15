@@ -3,7 +3,7 @@ name: Deploy to Lightsail
 on:
   push:
     branches:
-      - main
+      - main # Change this to your deployment branch
 
 jobs:
   deploy:
@@ -20,19 +20,22 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create .env on server
-        run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
-          "mkdir -p /home/bitnami/lightsail-nextjs && \
-           echo 'DATABASE_URI=${{ secrets.DATABASE_URI }}' > /home/bitnami/lightsail-nextjs/.env && \
-           echo 'NODE_ENV=production' >> /home/bitnami/lightsail-nextjs/.env"
+      # - name: Create .env on server
+      #   run: |
+      #     ssh ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+      #       echo "DATABASE_URI=${{ secrets.DATABASE_URI }}" > /opt/bitnami/lightsail-nextjs/.env
+      #       echo "NODE_ENV=production" >> /opt/bitnami/lightsail-nextjs/.env
+      #     EOF
 
       - name: Deploy to Lightsail
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
-          "cd /home/bitnami/lightsail-nextjs && \
-           git pull origin main && \
-           npm install && \
-           npm run build && \
-           (lsof -ti:3000 | xargs kill -9 2>/dev/null || true) && \
-           nohup npm run start > nextjs.log 2>&1 &"
+          ssh ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+            cd /home/bitnami//lightsail-nextjs
+            git pull origin main
+            npm install
+            npm run build
+            # Kill any existing process on port 3000 if needed
+            lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+            # Start the production server
+            nohup npm run start > nextjs.log 2>&1 &
+          EOF
