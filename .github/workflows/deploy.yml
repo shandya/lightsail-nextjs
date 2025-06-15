@@ -27,15 +27,15 @@ jobs:
       #       echo "NODE_ENV=production" >> /home/bitnami/lightsail-nextjs/.env
       #     EOF
 
+      - name: Upload app
+        run: |
+          scp -i ~/.ssh/id_rsa -r . ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/bitnami/lightsail-nextjs
+
       - name: Deploy to Lightsail
         run: |
-          ssh -t -t ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
-            cd /home/bitnami/lightsail-nextjs
-            git pull origin main
-            npm install
-            npm run build
-            # Kill any existing process on port 3000 if needed
-            lsof -ti:3000 | xargs kill -9 2>/dev/null || true
-            # Start the production server
-            nohup npm run start > nextjs.log 2>&1 &
-          EOF
+          ssh -tt -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} "
+            cd /home/bitnami/lightsail-nextjs &&
+            npm install &&
+            npm run build &&
+            npx kill-port 3000 || true &&
+            nohup npm run start > nextjs.log 2>&1 &"
