@@ -20,14 +20,14 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create .env on server
-        run: |
-          ssh -t -t ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
-            echo "DATABASE_URI=${{ secrets.DATABASE_URI }}" > /home/bitnami/lightsail-nextjs/.env
-            echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> /home/bitnami/lightsail-nextjs/.env
-            echo "NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}" >> /home/bitnami/lightsail-nextjs/.env
-            echo "NODE_ENV=production" >> /home/bitnami/lightsail-nextjs/.env
-          EOF
+      # - name: Create .env on server
+      #   run: |
+      #     ssh -t -t ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+      #       echo "DATABASE_URI=${{ secrets.DATABASE_URI }}" > /home/bitnami/lightsail-nextjs/.env
+      #       echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> /home/bitnami/lightsail-nextjs/.env
+      #       echo "NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}" >> /home/bitnami/lightsail-nextjs/.env
+      #       echo "NODE_ENV=production" >> /home/bitnami/lightsail-nextjs/.env
+      #     EOF
 
       - name: Upload app
         run: |
