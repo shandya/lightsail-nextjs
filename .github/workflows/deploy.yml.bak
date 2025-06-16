@@ -1,0 +1,46 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches:
+      - main # Change this to your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create .env on server
+        run: |
+          ssh -tt -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} 'bash -s' <<EOF
+            cd /home/bitnami/lightsail-nextjs
+            cat > .env <<EOT
+            DATABASE_URI=${{ secrets.DATABASE_URI }}
+            PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}
+            NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}
+            EOT
+          EOF
+
+      - name: Upload app
+        run: |
+          scp -i ~/.ssh/id_rsa -r . ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/bitnami/lightsail-nextjs
+
+      - name: Run commands on server
+        run: |
+          ssh -tt -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} "
+            cd /home/bitnami/lightsail-nextjs &&
+            npm install &&
+            npm run build &&
+            pm2 delete nextjs-app || true &&
+            pm2 start npm --name nextjs-app -- run start &&
+            pm2 save"

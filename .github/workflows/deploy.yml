@@ -3,7 +3,7 @@ name: Deploy to Lightsail
 on:
   push:
     branches:
-      - main # Change this to your deployment branch
+      - main
 
 jobs:
   deploy:
@@ -20,24 +20,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.LIGHTSAIL_HOST }} >> ~/.ssh/known_hosts
 
-      # - name: Create .env on server
-      #   run: |
-      #     ssh -t -t ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
-      #       echo "DATABASE_URI=${{ secrets.DATABASE_URI }}" > /home/bitnami/lightsail-nextjs/.env
-      #       echo "PAYLOAD_SECRET=${{ secrets.PAYLOAD_SECRET }}" >> /home/bitnami/lightsail-nextjs/.env
-      #       echo "NEXT_PUBLIC_SERVER_URL=${{ secrets.NEXT_PUBLIC_SERVER_URL }}" >> /home/bitnami/lightsail-nextjs/.env
-      #       echo "NODE_ENV=production" >> /home/bitnami/lightsail-nextjs/.env
-      #     EOF
-
-      - name: Upload app
+      - name: Deploy via SSH
         run: |
-          scp -i ~/.ssh/id_rsa -r . ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/home/bitnami/lightsail-nextjs
-
-      - name: Deploy to Lightsail
-        run: |
-          ssh -tt -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} "
-            cd /home/bitnami/lightsail-nextjs &&
-            npm install &&
-            npm run build &&
-            npx kill-port 3000 || true &&
-            nohup npm run start > nextjs.log 2>&1 &"
+          ssh ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} << 'EOF'
+            set -e
+            cd /home/bitnami/app
+            git pull origin main
+            docker-compose down
+            docker-compose up -d --build
+          EOF
